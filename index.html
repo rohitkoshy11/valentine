@@ -538,7 +538,7 @@
 
         const elapsed = Date.now() - noStartTime;
 
-        if (elapsed >= 3000 && !noPopup5Shown){
+        if (elapsed >= 2000 && !noPopup5Shown){
           noPopup5Shown = true;
           showModal({
             emoji: "🙄",
@@ -548,7 +548,7 @@
           });
         }
 
-        if (elapsed >= 6000 && !noPopup15Shown){
+        if (elapsed >= 5000 && !noPopup15Shown){
           noPopup15Shown = true;
           showModal({
             emoji: "🥺💘",
@@ -612,5 +612,6 @@
     </script>
   </body>
 </html>
+
 
 
