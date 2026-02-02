@@ -1,0 +1,542 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Valentine 💘</title>
+
+    <style>
+      :root{
+        --text: #111827;
+
+        /* Title */
+        --pastelTitle: #f08bb8;
+
+        /* Buttons */
+        --yesGreen: #7fbf7a;   /* sage */
+        --noRed: #d06a6a;      /* muted rose */
+
+        /* Pink pill CTA (modal + success) */
+        --pillPink: #f4a7c5;
+
+        /* Floating hearts color (matches pill/title) */
+        --heartPink1: #f4a7c5; /* pill pink */
+        --heartPink2: #f08bb8; /* title pink */
+      }
+
+      * { box-sizing: border-box; }
+
+      body{
+        margin: 0;
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+        color: var(--text);
+        background: #fff;
+        overflow-x: hidden;
+      }
+
+      /* ---------- Background Layers ---------- */
+      .bgLayer{
+        position: fixed;
+        inset: 0;
+        z-index: 0;
+        pointer-events: none;
+        transition: opacity 0.9s ease;
+      }
+
+      /* Default: Baljeet + Isabella */
+      #bgDefault{
+        background-image:
+          linear-gradient(rgba(255,255,255,0.18), rgba(255,255,255,0.18)),
+          url("background.webp");
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        opacity: 1;
+      }
+
+      /* YES: RJ wallpaper (repeat ~3 across) */
+      #bgYes{
+        background-image:
+          /* smaller = more visible photo; bigger = more washed */
+          linear-gradient(rgba(255,255,255,0.50), rgba(255,255,255,0.50)),
+          url("RJ-Halloween.jpg");
+        background-repeat: repeat;
+        background-size: 33.34vw auto;   /* ~3 tiles across */
+        background-position: center top;
+        opacity: 0;
+      }
+
+      /* Specificity fix so toggles always win */
+      #bgDefault.bg-hidden { opacity: 0; }
+      #bgYes.bg-shown { opacity: 1; }
+
+      /* ---------- Floating hearts layer ---------- */
+      .hearts{
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        z-index: 1; /* above bg layers, below UI */
+        overflow: hidden;
+      }
+
+      .heart{
+        position: absolute;
+        bottom: -30px;
+        width: 16px;
+        height: 16px;
+        transform: rotate(45deg);
+        opacity: 0.55;
+        filter: drop-shadow(0 8px 10px rgba(0,0,0,0.12));
+        animation: floatUp linear forwards;
+      }
+
+      .heart::before,
+      .heart::after{
+        content: "";
+        position: absolute;
+        width: 16px;
+        height: 16px;
+        background: currentColor;
+        border-radius: 50%;
+      }
+
+      .heart::before{ left: -8px; top: 0; }
+      .heart::after{ left: 0; top: -8px; }
+
+      .heart .sq{
+        position: absolute;
+        width: 16px;
+        height: 16px;
+        background: currentColor;
+        left: 0;
+        top: 0;
+        border-radius: 3px;
+      }
+
+      @keyframes floatUp{
+        to{
+          transform: translateY(-115vh) translateX(30px) rotate(65deg);
+          opacity: 0;
+        }
+      }
+
+      /* ---------- Layout (no white box) ---------- */
+      .wrap{
+        min-height: 100vh;
+        position: relative;
+        z-index: 2; /* above hearts */
+        padding: 24px 18px;
+
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 14px;
+      }
+
+      h1{
+        margin: 10px 0 0;
+        font-size: clamp(22px, 3.2vw, 36px);
+        font-weight: 900;
+        color: var(--pastelTitle);
+        text-align: center;
+        text-shadow:
+          0 2px 10px rgba(0,0,0,0.35),
+          0 0 2px rgba(0,0,0,0.25);
+      }
+
+      .stage{
+        margin-top: 10px;
+        position: relative;
+        width: min(760px, 94vw);
+        height: 360px;
+        display: grid;
+        place-items: center;
+      }
+
+      /* YES button */
+      #yesBtn{
+        width: 210px;
+        height: 140px;
+        border: none;
+        border-radius: 18px;
+        background: var(--yesGreen);
+        color: #fff;
+        font-size: 70px;
+        font-weight: 900;
+        letter-spacing: -1px;
+        cursor: pointer;
+        box-shadow: 0 12px 30px rgba(0,0,0,0.18);
+        transition: transform 0.15s ease, filter 0.15s ease, opacity 0.25s ease;
+        will-change: transform;
+        /* Heartbeat pulse */
+        animation: yesPulse 1.6s ease-in-out infinite;
+      }
+      #yesBtn:hover{ filter: brightness(1.03); }
+      #yesBtn:active{ transform: scale(0.98); }
+
+      @keyframes yesPulse{
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.04); }
+      }
+
+      /* When JS scales the Yes button, it will override transform.
+         We keep pulse by applying it to an inner span instead. */
+      #yesBtn span{
+        display: inline-block;
+        transform: translateY(2px);
+      }
+      #yesBtn{
+        animation: none; /* disable outer pulse */
+      }
+      #yesBtn span{
+        animation: yesPulse 1.6s ease-in-out infinite;
+      }
+
+      /* NO button */
+      #noBtn{
+        position: absolute;
+        left: 62%;
+        top: 52%;
+        padding: 10px 14px;
+        border-radius: 12px;
+        border: none;
+        background: var(--noRed);
+        color: #fff;
+        font-weight: 900;
+        cursor: pointer;
+        box-shadow: 0 10px 22px rgba(0,0,0,0.18);
+        transition: filter 0.15s ease, opacity 0.25s ease;
+      }
+      #noBtn:hover{ filter: brightness(1.03); }
+
+      /* Hide buttons after YES */
+      .gone{
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      /* ---------- Reusable pink pill button ---------- */
+      .pinkPill{
+        border: none;
+        border-radius: 999px;
+        padding: 12px 22px;
+        font-weight: 900;
+        cursor: pointer;
+
+        background: var(--pillPink);
+        color: #ffffff;
+
+        box-shadow: 0 10px 22px rgba(0,0,0,0.15);
+        transition: transform .12s ease, filter .12s ease;
+      }
+      .pinkPill:hover{ filter: brightness(1.05); }
+      .pinkPill:active{ transform: scale(0.97); }
+
+      /* ---------- Cute Modal ---------- */
+      .modalOverlay{
+        position: fixed;
+        inset: 0;
+        background: rgba(17,24,39,0.25);
+        display: none;
+        place-items: center;
+        padding: 18px;
+        z-index: 50;
+      }
+      .modalOverlay.show{ display: grid; }
+
+      .modalCard{
+        width: min(520px, 92vw);
+        background: rgba(255,255,255,0.94);
+        backdrop-filter: blur(6px);
+        border-radius: 20px;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.18);
+        padding: 18px 18px 16px;
+        transform: scale(0.94);
+        opacity: 0;
+        animation: popIn .18s ease forwards;
+        text-align: center;
+      }
+      @keyframes popIn{ to{ transform: scale(1); opacity: 1; } }
+
+      .modalEmoji{ font-size: 30px; user-select: none; }
+      .modalTitle{ margin: 10px 0 6px; font-size: 18px; font-weight: 900; }
+      .modalBody{ margin: 0 0 14px; font-size: 14px; color: #374151; }
+
+      /* ---------- Success Overlay (very transparent so photo shows) ---------- */
+      .overlay{
+        position: fixed;
+        inset: 0;
+        background: rgba(255,255,255,0.04);
+        display: none;
+        place-items: center;
+        padding: 24px;
+        z-index: 60;
+      }
+      .overlay.show{ display: grid; }
+
+      .success{
+        background: rgba(255,255,255,0.72);
+        backdrop-filter: blur(6px);
+        padding: 22px 18px;
+        border-radius: 20px;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.18);
+        text-align: center;
+        max-width: 520px;
+      }
+      .success h2{ margin: 0 0 10px; font-size: 28px; }
+      .success p{ margin: 0 0 16px; font-size: 16px; line-height: 1.35; }
+
+      /* ---------- Confetti ---------- */
+      .confetti{
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        overflow: hidden;
+        z-index: 70;
+      }
+      .piece{
+        position: absolute;
+        top: -20px;
+        width: 10px;
+        height: 16px;
+        border-radius: 3px;
+        opacity: 0.9;
+        animation: fall linear forwards;
+      }
+      @keyframes fall{
+        to { transform: translateY(110vh) rotate(720deg); }
+      }
+
+      @media (max-height: 700px){
+        .stage{ height: 300px; }
+      }
+    </style>
+  </head>
+
+  <body>
+    <!-- Background layers -->
+    <div class="bgLayer" id="bgDefault"></div>
+    <div class="bgLayer" id="bgYes"></div>
+
+    <!-- Floating hearts layer -->
+    <div class="hearts" id="hearts"></div>
+
+    <div class="wrap">
+      <h1>Dear Jadon, Will you be my Valentine?</h1>
+
+      <div class="stage" id="stage">
+        <button id="yesBtn"><span>Yes</span></button>
+        <button id="noBtn">No</button>
+      </div>
+    </div>
+
+    <!-- Cute modal -->
+    <div class="modalOverlay" id="modalOverlay" aria-hidden="true">
+      <div class="modalCard" role="dialog" aria-modal="true">
+        <div class="modalEmoji" id="modalEmoji">💌</div>
+        <div class="modalTitle" id="modalTitle"></div>
+        <div class="modalBody" id="modalBody"></div>
+        <button class="pinkPill" id="modalOkBtn">i’m just playing hard to get</button>
+      </div>
+    </div>
+
+    <!-- Success overlay -->
+    <div class="overlay" id="overlay">
+      <div class="success">
+        <h2>YAYYYYYYYYYY</h2>
+        <p>I can’t wait to see you Sugarbear <br> - xoxo R</p>
+        </p>
+        <button id="closeBtn" class="pinkPill">Close</button>
+      </div>
+    </div>
+
+    <div class="confetti" id="confetti"></div>
+
+    <script>
+      const noBtn = document.getElementById("noBtn");
+      const yesBtn = document.getElementById("yesBtn");
+      const stage = document.getElementById("stage");
+
+      const bgDefault = document.getElementById("bgDefault");
+      const bgYes = document.getElementById("bgYes");
+
+      const overlay = document.getElementById("overlay");
+      const closeBtn = document.getElementById("closeBtn");
+      const confetti = document.getElementById("confetti");
+
+      // Floating hearts
+      const hearts = document.getElementById("hearts");
+      function spawnHeart(){
+        const h = document.createElement("div");
+        h.className = "heart";
+
+        // Alternate colors to match title + pink pill
+        const useTitle = Math.random() > 0.5;
+        h.style.color = useTitle ? "var(--heartPink2)" : "var(--heartPink1)";
+
+        // Random sizes + positions (subtle)
+        const size = 10 + Math.random() * 14;
+        h.style.width = `${size}px`;
+        h.style.height = `${size}px`;
+        h.style.left = `${Math.random() * 100}vw`;
+        h.style.opacity = `${0.35 + Math.random() * 0.25}`;
+        h.style.animationDuration = `${4.5 + Math.random() * 3}s`;
+
+        // Little square to complete the heart shape
+        const sq = document.createElement("div");
+        sq.className = "sq";
+        h.appendChild(sq);
+
+        hearts.appendChild(h);
+        setTimeout(() => h.remove(), 8500);
+      }
+      // Start hearts gently
+      const heartInterval = setInterval(spawnHeart, 650);
+
+      // Modal
+      const modalOverlay = document.getElementById("modalOverlay");
+      const modalEmoji = document.getElementById("modalEmoji");
+      const modalTitle = document.getElementById("modalTitle");
+      const modalBody = document.getElementById("modalBody");
+      const modalOkBtn = document.getElementById("modalOkBtn");
+
+      let noStartTime = null;
+      let noPopup5Shown = false;
+      let noPopup15Shown = false;
+      let yesScale = 1;
+
+      function clamp(n, min, max){
+        return Math.max(min, Math.min(max, n));
+      }
+
+      function showModal({ emoji, title, body, okText }){
+        modalEmoji.textContent = emoji ?? "💌";
+        modalTitle.textContent = title ?? "";
+        modalBody.textContent = body ?? "";
+        modalOkBtn.textContent = okText ?? "okay 💖";
+
+        modalOverlay.classList.add("show");
+        modalOverlay.setAttribute("aria-hidden", "false");
+        modalOkBtn.focus();
+      }
+
+      function hideModal(){
+        modalOverlay.classList.remove("show");
+        modalOverlay.setAttribute("aria-hidden", "true");
+      }
+
+      modalOkBtn.addEventListener("click", hideModal);
+      modalOverlay.addEventListener("click", (e) => {
+        if (e.target === modalOverlay) hideModal();
+      });
+      window.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") hideModal();
+      });
+
+      function moveNoButton(){
+        const stageRect = stage.getBoundingClientRect();
+        const btnRect = noBtn.getBoundingClientRect();
+        const padding = 10;
+
+        const maxX = stageRect.width - btnRect.width - padding;
+        const maxY = stageRect.height - btnRect.height - padding;
+
+        const x = clamp(Math.random() * maxX, padding, maxX);
+        const y = clamp(Math.random() * maxY, padding, maxY);
+
+        noBtn.style.left = `${x}px`;
+        noBtn.style.top = `${y}px`;
+      }
+
+      function growYesButton(){
+        yesScale += 0.07;
+        // Keep inner pulse; scale the outer button wrapper
+        yesBtn.style.transform = `scale(${yesScale})`;
+      }
+
+      function checkNoPersistence(){
+        if (!noStartTime){
+          noStartTime = Date.now();
+          return;
+        }
+
+        const elapsed = Date.now() - noStartTime;
+
+        if (elapsed >= 5000 && !noPopup5Shown){
+          noPopup5Shown = true;
+          showModal({
+            emoji: "🙄",
+            title: "Why are you still trying to click no?",
+            body: "Think about spottie....",
+            okText: "i’m just playing hard to get"
+          });
+        }
+
+        if (elapsed >= 15000 && !noPopup15Shown){
+          noPopup15Shown = true;
+          showModal({
+            emoji: "🥺💘",
+            title: "I guess I’ll take Manny to VDay Dinner",
+            body: "This should have been an easier decision for you Jadon…",
+            okText: "Okay Okay - I’ll click yes Handsome"
+          });
+        }
+      }
+
+      noBtn.addEventListener("mouseenter", () => {
+        checkNoPersistence();
+        growYesButton();
+        moveNoButton();
+      });
+
+      noBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        checkNoPersistence();
+        growYesButton();
+        moveNoButton();
+      });
+
+      function popConfetti(){
+        confetti.innerHTML = "";
+        const colors = ["#ff4d6d", "#ffb703", "#8338ec", "#3a86ff", "#06d6a0"];
+
+        for (let i = 0; i < 120; i++){
+          const piece = document.createElement("div");
+          piece.className = "piece";
+          piece.style.left = `${Math.random() * 100}vw`;
+          piece.style.background = colors[Math.floor(Math.random() * colors.length)];
+          piece.style.animationDuration = `${2.2 + Math.random() * 1.8}s`;
+          piece.style.animationDelay = `${Math.random() * 0.25}s`;
+          piece.style.width = `${8 + Math.random() * 8}px`;
+          piece.style.height = `${10 + Math.random() * 14}px`;
+          confetti.appendChild(piece);
+        }
+
+        setTimeout(() => (confetti.innerHTML = ""), 4500);
+      }
+
+      yesBtn.addEventListener("click", () => {
+        hideModal();
+
+        // Remove buttons after YES
+        yesBtn.classList.add("gone");
+        noBtn.classList.add("gone");
+
+        // Swap backgrounds
+        bgDefault.classList.add("bg-hidden");
+        bgYes.classList.add("bg-shown");
+
+        overlay.classList.add("show");
+        popConfetti();
+
+        // Optional: slightly slow heart spawn after yes (feels calmer)
+        // clearInterval(heartInterval);
+        // setInterval(spawnHeart, 900);
+      });
+
+      closeBtn.addEventListener("click", () => {
+        overlay.classList.remove("show");
+      });
+    </script>
+  </body>
+</html>
