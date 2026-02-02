@@ -57,7 +57,6 @@
       /* YES: RJ wallpaper (repeat ~3 across) */
       #bgYes{
         background-image:
-          /* smaller = more visible photo; bigger = more washed */
           linear-gradient(rgba(255,255,255,0.50), rgba(255,255,255,0.50)),
           url("RJ-Halloween.jpg");
         background-repeat: repeat;
@@ -120,7 +119,7 @@
         }
       }
 
-      /* ---------- Layout (no white box) ---------- */
+      /* ---------- Layout ---------- */
       .wrap{
         min-height: 100vh;
         position: relative;
@@ -153,7 +152,7 @@
         place-items: center;
       }
 
-      /* YES button */
+      /* YES button (pulse on inner span so JS scaling doesn't kill animation) */
       #yesBtn{
         width: 210px;
         height: 140px;
@@ -168,8 +167,6 @@
         box-shadow: 0 12px 30px rgba(0,0,0,0.18);
         transition: transform 0.15s ease, filter 0.15s ease, opacity 0.25s ease;
         will-change: transform;
-        /* Heartbeat pulse */
-        animation: yesPulse 1.6s ease-in-out infinite;
       }
       #yesBtn:hover{ filter: brightness(1.03); }
       #yesBtn:active{ transform: scale(0.98); }
@@ -178,25 +175,17 @@
         0%, 100% { transform: scale(1); }
         50% { transform: scale(1.04); }
       }
-
-      /* When JS scales the Yes button, it will override transform.
-         We keep pulse by applying it to an inner span instead. */
       #yesBtn span{
         display: inline-block;
         transform: translateY(2px);
-      }
-      #yesBtn{
-        animation: none; /* disable outer pulse */
-      }
-      #yesBtn span{
         animation: yesPulse 1.6s ease-in-out infinite;
       }
 
       /* NO button */
       #noBtn{
         position: absolute;
-        left: 62%;
-        top: 52%;
+        left: 72%;
+        top: 38%;
         padding: 10px 14px;
         border-radius: 12px;
         border: none;
@@ -206,6 +195,7 @@
         cursor: pointer;
         box-shadow: 0 10px 22px rgba(0,0,0,0.18);
         transition: filter 0.15s ease, opacity 0.25s ease;
+        touch-action: manipulation;
       }
       #noBtn:hover{ filter: brightness(1.03); }
 
@@ -262,7 +252,7 @@
       .modalTitle{ margin: 10px 0 6px; font-size: 18px; font-weight: 900; }
       .modalBody{ margin: 0 0 14px; font-size: 14px; color: #374151; }
 
-      /* ---------- Success Overlay (very transparent so photo shows) ---------- */
+      /* ---------- Success Overlay ---------- */
       .overlay{
         position: fixed;
         inset: 0;
@@ -310,6 +300,37 @@
       @media (max-height: 700px){
         .stage{ height: 300px; }
       }
+
+      /* ---------- Mobile / iOS portrait fixes ---------- */
+      @media (max-width: 520px){
+        .stage{
+          height: 420px;
+        }
+
+        /* Better framing for Baljeet/Isabella in portrait */
+        #bgDefault{
+          background-position: center 30%;
+        }
+
+        /* Bigger tiles on mobile so RJ wallpaper doesn't look too busy */
+        #bgYes{
+          background-size: 60vw auto;
+          background-position: center top;
+        }
+
+        /* Slightly smaller Yes so image shows more */
+        #yesBtn{
+          width: 190px;
+          height: 125px;
+          font-size: 62px;
+        }
+
+        /* Start NO farther away */
+        #noBtn{
+          left: 74%;
+          top: 34%;
+        }
+      }
     </style>
   </head>
 
@@ -343,9 +364,8 @@
     <!-- Success overlay -->
     <div class="overlay" id="overlay">
       <div class="success">
-        <h2>YAYYYYYYYYYY</h2>
-        <p>I can’t wait to see you Sugarbear <br> - xoxo R</p>
-        </p>
+        <h2>YAYYY</h2>
+        <p>I can't wait to see you sugarbear <br> -xoxo R</p>
         <button id="closeBtn" class="pinkPill">Close</button>
       </div>
     </div>
@@ -379,10 +399,10 @@
         h.style.width = `${size}px`;
         h.style.height = `${size}px`;
         h.style.left = `${Math.random() * 100}vw`;
-        h.style.opacity = `${0.35 + Math.random() * 0.25}`;
+        h.style.opacity = `${0.30 + Math.random() * 0.25}`;
         h.style.animationDuration = `${4.5 + Math.random() * 3}s`;
 
-        // Little square to complete the heart shape
+        // Square for the heart base
         const sq = document.createElement("div");
         sq.className = "sq";
         h.appendChild(sq);
@@ -390,8 +410,7 @@
         hearts.appendChild(h);
         setTimeout(() => h.remove(), 8500);
       }
-      // Start hearts gently
-      const heartInterval = setInterval(spawnHeart, 650);
+      setInterval(spawnHeart, 650);
 
       // Modal
       const modalOverlay = document.getElementById("modalOverlay");
@@ -434,23 +453,80 @@
       });
 
       function moveNoButton(){
-        const stageRect = stage.getBoundingClientRect();
-        const btnRect = noBtn.getBoundingClientRect();
-        const padding = 10;
+  const stageRect = stage.getBoundingClientRect();
+  const noRect = noBtn.getBoundingClientRect();
+  const yesRect = yesBtn.getBoundingClientRect();
 
-        const maxX = stageRect.width - btnRect.width - padding;
-        const maxY = stageRect.height - btnRect.height - padding;
+  const padding = 10;
 
-        const x = clamp(Math.random() * maxX, padding, maxX);
-        const y = clamp(Math.random() * maxY, padding, maxY);
+  // Compute bounds for NO placement within the stage
+  const maxX = stageRect.width - noRect.width - padding;
+  const maxY = stageRect.height - noRect.height - padding;
 
-        noBtn.style.left = `${x}px`;
-        noBtn.style.top = `${y}px`;
-      }
+  // Build a "no-fly zone" around the YES button (extra padding)
+  const buffer = Math.max(40, Math.min(stageRect.width, stageRect.height) * 0.12);
+
+  const noFly = {
+    left: (yesRect.left - stageRect.left) - buffer,
+    top: (yesRect.top - stageRect.top) - buffer,
+    right: (yesRect.right - stageRect.left) + buffer,
+    bottom: (yesRect.bottom - stageRect.top) + buffer
+  };
+
+  // Clamp no-fly bounds to stage bounds (avoid weird negatives)
+  noFly.left = Math.max(padding, noFly.left);
+  noFly.top = Math.max(padding, noFly.top);
+  noFly.right = Math.min(stageRect.width - padding, noFly.right);
+  noFly.bottom = Math.min(stageRect.height - padding, noFly.bottom);
+
+  function isInsideNoFly(x, y){
+    return (
+      x >= noFly.left &&
+      x <= noFly.right - noRect.width &&
+      y >= noFly.top &&
+      y <= noFly.bottom - noRect.height
+    );
+  }
+
+  // Try a few random positions until we find one outside the no-fly zone
+  let x, y;
+  let tries = 0;
+  do{
+    x = clamp(Math.random() * maxX, padding, maxX);
+    y = clamp(Math.random() * maxY, padding, maxY);
+    tries++;
+  } while (isInsideNoFly(x, y) && tries < 40);
+
+  // If we somehow fail (rare), force it to a corner away from YES
+  if (tries >= 40){
+    // pick farthest-ish corner from YES center
+    const yesCenterX = (yesRect.left + yesRect.right) / 2 - stageRect.left;
+    const yesCenterY = (yesRect.top + yesRect.bottom) / 2 - stageRect.top;
+
+    const corners = [
+      {x: padding, y: padding},
+      {x: maxX, y: padding},
+      {x: padding, y: maxY},
+      {x: maxX, y: maxY},
+    ];
+
+    corners.sort((a,b) => {
+      const da = (a.x-yesCenterX)**2 + (a.y-yesCenterY)**2;
+      const db = (b.x-yesCenterX)**2 + (b.y-yesCenterY)**2;
+      return db - da;
+    });
+
+    x = corners[0].x;
+    y = corners[0].y;
+  }
+
+  noBtn.style.left = `${x}px`;
+  noBtn.style.top = `${y}px`;
+}
+
 
       function growYesButton(){
         yesScale += 0.07;
-        // Keep inner pulse; scale the outer button wrapper
         yesBtn.style.transform = `scale(${yesScale})`;
       }
 
@@ -483,18 +559,18 @@
         }
       }
 
-      noBtn.addEventListener("mouseenter", () => {
+      function dodgeNo(e){
+        if (e) e.preventDefault();
         checkNoPersistence();
         growYesButton();
         moveNoButton();
-      });
+      }
 
-      noBtn.addEventListener("click", (e) => {
-        e.preventDefault();
-        checkNoPersistence();
-        growYesButton();
-        moveNoButton();
-      });
+      // Mobile + desktop support
+      noBtn.addEventListener("pointerdown", dodgeNo);
+      noBtn.addEventListener("pointerenter", dodgeNo); // desktop hover-like
+      noBtn.addEventListener("click", dodgeNo);
+      noBtn.addEventListener("touchstart", dodgeNo, { passive: false });
 
       function popConfetti(){
         confetti.innerHTML = "";
@@ -528,10 +604,6 @@
 
         overlay.classList.add("show");
         popConfetti();
-
-        // Optional: slightly slow heart spawn after yes (feels calmer)
-        // clearInterval(heartInterval);
-        // setInterval(spawnHeart, 900);
       });
 
       closeBtn.addEventListener("click", () => {
